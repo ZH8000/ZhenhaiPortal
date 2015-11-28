@@ -11,47 +11,31 @@ import scala.util._
 class Boot 
 {
   def errorPageResponse(req: Req, code: Int) = {
-    println("req:" + req)
-    println("code:" + code)
     val content = S.render(<lift:embed what={code.toString} />, req.request)
     XmlResponse(content.head, code, "text/html", req.cookies)
   }
 
-  def redirectToXG = EarlyResponse { () =>
+  def redirectTo(ipAddress: String, fallback: String) = EarlyResponse { () =>
+
     val connectionTry = Try {
-      val httpConnection = new java.net.URL("http://221.4.141.146")
+
+      val httpConnection = new java.net.URL(ipAddress)
                               .openConnection()
                               .asInstanceOf[sun.net.www.protocol.http.HttpURLConnection]
 
-      httpConnection.setConnectTimeout(60 * 1000)
-      httpConnection.setReadTimeout(60 * 1000)
+      httpConnection.setConnectTimeout(30 * 1000)
+      httpConnection.setReadTimeout(30 * 1000)
       httpConnection.getResponseCode
     }
 
     connectionTry match {
-      case Success(200) => S.redirectTo("http://221.4.141.146")
-      case _            => S.redirectTo("http://dashboardXG.zhenhai.com.tw")
+      case Success(200) => S.redirectTo(ipAddress)
+      case _            => S.redirectTo(fallback)
     }
   }
 
-  def redirectToSZ = EarlyResponse { () =>
-
-    val connectionTry = Try {
-
-      val httpConnection = new java.net.URL("http://218.4.250.102")
-                              .openConnection()
-                              .asInstanceOf[sun.net.www.protocol.http.HttpURLConnection]
-
-      httpConnection.setConnectTimeout(60 * 1000)
-      httpConnection.setReadTimeout(60 * 1000)
-      httpConnection.getResponseCode
-    }
-
-    connectionTry match {
-      case Success(200) => S.redirectTo("http://221.4.141.146")
-      case _            => S.redirectTo("http://dashboardXG.zhenhai.com.tw")
-    }
-  }
+  def redirectToXG = redirectTo("http://221.4.141.146", "http://dashboardXG.zhenhai.com.tw")
+  def redirectToSZ = redirectTo("http://218.4.250.102", "http://dashboardSZ.zhenhai.com.tw")
 
   def boot 
   {
